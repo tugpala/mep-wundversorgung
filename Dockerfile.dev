@@ -1,0 +1,22 @@
+FROM ruby:2.7.1
+
+RUN printf "deb http://archive.debian.org/debian/ jessie main\ndeb-src http://archive.debian.org/debian/ jessie main\ndeb http://security.debian.org jessie/updates main\ndeb-src http://security.debian.org jessie/updates main" > /etc/apt/sources.list
+
+RUN apt-get update -qq && apt-get install -y firebird-dev npm
+RUN npm install -g n && n stable && npm install --global yarn
+
+RUN mkdir /data
+WORKDIR /data
+
+COPY Gemfile /data
+# COPY Gemfile.lock /data
+RUN bundle install && yarn
+
+# Add a script to be executed every time the container starts.
+COPY entrypoint.sh /usr/bin/
+RUN chmod +x /usr/bin/entrypoint.sh
+ENTRYPOINT ["entrypoint.sh"]
+EXPOSE 3000
+
+# Start the main process.
+CMD ["bundle", "exec", "rails", "server", "-p", "3000"]
